@@ -59,7 +59,7 @@ async function run() {
     })
     //use query
     app.get('/bookings',async(req,res)=>{
-      console.log(req.query.customerEmail);
+      
       let query={}
       if(req.query?.customerEmail){
         query={customerEmail:req.query.customerEmail}
@@ -71,6 +71,21 @@ async function run() {
         res.send(result)
 
 
+    })
+    //delete
+
+    app.delete('/bookings/:id',async(req,res)=>{
+      const id=req.params.id
+      const query={_id :new ObjectId(id)}
+      const result=await BookingCollection.deleteOne(query)
+      console.log(result);
+      res.send(result)
+     
+    })
+    //update
+    app.put('/bookings/:id',async(req,res)=>{
+      const updatedBokking=req.body;
+      
     })
 
    
