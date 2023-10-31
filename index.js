@@ -78,14 +78,23 @@ async function run() {
       const id=req.params.id
       const query={_id :new ObjectId(id)}
       const result=await BookingCollection.deleteOne(query)
-      console.log(result);
+     
       res.send(result)
      
     })
     //update
-    app.put('/bookings/:id',async(req,res)=>{
-      const updatedBokking=req.body;
+    app.patch('/bookings/:id',async(req,res)=>{
+      const updatedBooking=req.body;
+      const id=req.params.id;
       
+      const filter={_id:new ObjectId(id)}
+      const updateDoc={
+        $set:{
+            status:updatedBooking.status
+        }
+      }  
+      const result=await BookingCollection.updateOne(filter,updateDoc)  
+      res.send(result)  
     })
 
    
