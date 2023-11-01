@@ -1,12 +1,18 @@
 const express = require('express');
 const cors = require('cors');
+const jwt=require('jsonwebtoken');
+var cookieParser = require('cookie-parser')
 const app=express()
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 require('dotenv').config();
 const port =process.env.PORT  || 5001
 //middle ware
-app.use(cors())
+app.use(cors({
+    origin:['http://localhost:5173'],
+    credentials:true,
+}))
 app.use(express.json())
+app.use(cookieParser())
 
 console.log(process.env.DB_USER);
 console.log(process.env.DB_PASSWORD);
@@ -30,6 +36,23 @@ async function run() {
 
     const serviceCollection= client.db('carDoctor').collection('services')
     const BookingCollection= client.db('carDoctor').collection('booking')
+
+
+    //auth related
+    app.post('/jwt',async(req,res)=>{
+        const user=req.body;
+    //    console.log(user);
+       const token=jwt.sign(user,process.env.ACCESS_TOKEN,{expiresIn:'1h'})
+    //    console.log(token);
+        res
+        .cookie('token',token,{
+            httpOnly:true,
+            secure:false,
+            // sameSite:'none'
+        })
+        .send({success:true})
+    })
+
     app.get('/services',async(req,res)=>{
         const cursor=serviceCollection.find()
         const result=await cursor.toArray()
@@ -54,12 +77,13 @@ async function run() {
     //bookings
     app.post('/bookings',async(req,res)=>{
         const booking=req.body;
+       
         const result=await BookingCollection.insertOne(booking)
         res.send(result)
     })
     //use query
     app.get('/bookings',async(req,res)=>{
-      
+        console.log('token is',req.cookies.token);
       let query={}
       if(req.query?.customerEmail){
         query={customerEmail:req.query.customerEmail}
