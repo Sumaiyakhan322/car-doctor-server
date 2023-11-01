@@ -27,7 +27,27 @@ const client = new MongoClient(uri, {
     deprecationErrors: true,
   }
 });
+//middle ware
+// const logger=async(req,res,next)=>{
+//     console.log('logger',req.host,req.originalUrl);
+//     next()
+// }
+const verifyToken=async(req,res,next)=>{
+    const token=req.cookies?.token;
+    if(!token){
+        return res.status(401).send({message:'not authorized'})
+    }
+    jwt.verify(token,process.env.ACCESS_TOKEN,(err,decoded)=>{
+      if(err){
+        console.log(err);
+        return res.status(401).send({message:'not authorized'})
+      }
+      console.log(decoded);
+      req.user=decoded
+      next()
 
+    })
+}
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
@@ -82,8 +102,8 @@ async function run() {
         res.send(result)
     })
     //use query
-    app.get('/bookings',async(req,res)=>{
-        console.log('token is',req.cookies.token);
+    app.get('/bookings',verifyToken,async(req,res)=>{
+        // console.log('token is',req.cookies.token);
       let query={}
       if(req.query?.customerEmail){
         query={customerEmail:req.query.customerEmail}
