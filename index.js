@@ -32,22 +32,24 @@ const client = new MongoClient(uri, {
 //     console.log('logger',req.host,req.originalUrl);
 //     next()
 // }
-const verifyToken=async(req,res,next)=>{
-    const token=req.cookies?.token;
-    if(!token){
-        return res.status(401).send({message:'not authorized'})
-    }
-    jwt.verify(token,process.env.ACCESS_TOKEN,(err,decoded)=>{
-      if(err){
-        console.log(err);
-        return res.status(401).send({message:'not authorized'})
-      }
-      console.log(decoded);
-      req.user=decoded
-      next()
+// const verifyToken=async(req,res,next)=>{
+//     const token=req.cookies?.token;
+//     if(!token){
+//         return res.status(401).send({message:'not authorized'})
+//     }
+//     jwt.verify(token,process.env.ACCESS_TOKEN,(err,decoded)=>{
+//       if(err){
+//         console.log(err);
+//         return res.status(401).send({message:'not authorized'})
+//       }
+//       console.log(decoded);
+//       req.user=decoded
+//       next()
 
-    })
-}
+//     })
+// }
+
+
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
@@ -58,20 +60,33 @@ async function run() {
     const BookingCollection= client.db('carDoctor').collection('booking')
 
 
-    //auth related
-    app.post('/jwt',async(req,res)=>{
-        const user=req.body;
-    //    console.log(user);
-       const token=jwt.sign(user,process.env.ACCESS_TOKEN,{expiresIn:'1h'})
-    //    console.log(token);
-        res
-        .cookie('token',token,{
-            httpOnly:true,
-            secure:false,
-            // sameSite:'none'
-        })
-        .send({success:true})
+
+
+  // auth route
+  app.post('/jwt',async(req,res)=>{
+    const user=req.body;
+    const token=jwt.sign(user,process.env.ACCESS_TOKEN,{expiresIn:'1000h'});
+    console.log(token);
+    res
+    .cookie('token',token,{
+      httpOnly:true,
+      secure:true,
+      sameSite:'none'
     })
+    .send({success:true})
+
+  })
+  //user logout
+  app.post('/logout',async(req,res)=>{
+    const user=req.body
+    res
+    .clearCookie('token',{maxAge:0})
+    .send({success:true})
+  })
+
+
+
+    //service 
 
     app.get('/services',async(req,res)=>{
         const cursor=serviceCollection.find()
@@ -102,8 +117,12 @@ async function run() {
         res.send(result)
     })
     //use query
-    app.get('/bookings',verifyToken,async(req,res)=>{
-        // console.log('token is',req.cookies.token);
+    app.get('/bookings',async(req,res)=>{
+       console.log('token is',req.cookies.token);
+      //  console.log('our varified token',req.user);
+    //    if(req.query.customerEmail!==req.user.body){
+    //      return res.status('403').send({message:'forbidden'})
+    //    }
       let query={}
       if(req.query?.customerEmail){
         query={customerEmail:req.query.customerEmail}
